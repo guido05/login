@@ -24,10 +24,17 @@ public class UserRoleEntity {
     @Column(nullable = false)
     private String role;
 
-    @Column(name="granted_date",nullable = false,columnDefinition = "DATETIME")
+    @Column(name="granted_date",nullable = false)
     private LocalDateTime grantedDate;
 
     @ManyToOne
-    @JoinColumn(name="username", referencedColumnName = "username", insertable = false, updatable = false)
+    @MapsId("username")
+    @JoinColumn(name="username", referencedColumnName = "username")
     private UserEntity user;
+
+    public UserRoleEntity(UserEntity username, String role) {
+        this.user = username;
+        this.role = role;
+        this.grantedDate = LocalDateTime.now();
+    }
 }
