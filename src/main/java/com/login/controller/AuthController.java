@@ -1,7 +1,9 @@
 package com.login.controller;
 
+import com.google.firebase.auth.FirebaseToken;
 import com.login.dto.*;
 import com.login.config.JwtUtil;
+import com.login.service.FirebaseService;
 import com.login.service.UserService;
 import jakarta.validation.Valid;
 import org.apache.catalina.User;
@@ -15,6 +17,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -78,5 +81,15 @@ public class AuthController {
     public ResponseEntity<ResponseDefaultDto> validateToken(@RequestParam String token) {
         userService.validateToken(token);
         return ResponseEntity.ok(new ResponseDefaultDto(200, "OK", null, "Token válido."));
+    }
+
+    @PostMapping("/google-login")
+    public ResponseEntity<ResponseDefaultDto> googleLogin(@RequestBody GoogleLoginDto dto) {
+        String username = userService.loginOrRegisterGoogle(dto.idToken());
+        String jwtToken = jwt.create(username);
+
+        return ResponseEntity.ok(new ResponseDefaultDto(200, "Successful",
+                new ResponseDto(username, List.of("ROLE_USER"), jwtToken),
+                "Login con Google exitoso"));
     }
 }

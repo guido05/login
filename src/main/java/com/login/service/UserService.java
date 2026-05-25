@@ -1,5 +1,6 @@
 package com.login.service;
 
+import com.google.firebase.auth.FirebaseToken;
 import com.login.dto.ResponseDefaultDto;
 import com.login.entity.ResetPasswordToken;
 import com.login.entity.UserEntity;
@@ -29,6 +30,7 @@ public class UserService {
     private final ResetPasswordTokenRepository tokenRepo;
 
     private final MailSenderPort emailService;
+    private final FirebaseService firebaseService;
 
     @Value("${app.reset.token.minutes:15}")
     private int tokenMinutes;
@@ -122,5 +124,27 @@ public class UserService {
         if (t.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeExceptionDTO(new ResponseDefaultDto(403,"Error",null,"Token vencido"));
         }
+    }
+
+    public String loginOrRegisterGoogle(String idToken) {
+        FirebaseToken firebaseToken = firebaseService.verifyToken(idToken);
+        String email = firebaseToken.getEmail();
+        String name = firebaseToken.getName();
+
+        // Si no existe lo registramos
+        if (!userRepository.existsById(email)) {
+            UserEntity user = new UserEntity();
+            user.setUsername(email);
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.setMail(email);
+            user.setLocked(false);
+            user.setDisabled(false);
+            userRepository.save(user);
+
+            UserRoleEntity role = new UserRoleEntity(user, "ROLE_USER");
+            userRoleRepository.save(role);
+        }
+
+        return email; // devolvemos el username para generar el JWT en el controller
     }
 }
